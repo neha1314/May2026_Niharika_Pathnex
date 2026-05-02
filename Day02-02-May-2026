@@ -1,0 +1,132 @@
+#Ansible task- Install and enable nginx
+
+-name: Install & enabled nginx
+ hosts: all
+ become: yes
+
+tasks:
+    -name: Install nginx
+     image: nginx:latest
+     state: present
+
+    -name: Enable nginx
+     service:
+     name: nginx
+     state: started
+     enabled: yes
+
+
+#Terraform - Create Ec2 instance (r5.2xlarge) 
+
+provider "aws" {
+ region= "us-east-1"
+}
+
+resource "aws_instance" "EC2"{
+     ami=  "ami-0abcd1234abcd1234"
+     instance_type= "r5.2xlarge"
+    tags={
+      Name = "Pathnex-Server"
+      Environment = "Training"
+      Owner = "PathnexStudent"
+  }
+}
+
+
+#Kubernetes- Deployment with 2 replicas
+
+apiVersion: apps/v1
+kind: Deployment #A Deployment manages Pods and ensures the desired number of replicas are running, handling updates and restarts.
+metadata:
+  name: pathnex-deployment
+spec:
+  replicas: 2
+  selector: #Tells the Deployment which Pods it manages.
+    matchLabels: #The Deployment manages Pods that have the label
+      app: pathnex-app
+  template: #Pod template
+     #This section defines how each Pod should be created.
+    metadata:
+      labels:
+        app: pathnex-app
+    spec:
+      containers:
+        - name: app
+          image: nginx
+          ports:
+            - containerPort: 80
+
+
+#Shell Script
+
+#!/bin/bash
+df -h  #disk usage
+free -m #to diplay memory usage   -m= megabyte   , -h=human readable,  -s=seconds
+
+
+## 🔹 GitLab CI — Maven Build
+stages:
+   -build 
+   -test
+   -package
+
+maven-build:
+  stage: build
+  image: maven:3.8.1-jdk-17
+  script:
+       -git clone  xyzurl
+       -cd sample-java-app
+       -mvn clean compile  # it first cleans and then compile all java package 
+
+maven-test:
+    stage: test
+    image: maven:3.8.1-jdk-17
+    script:
+       -cd sample-java-app
+       -mvn test
+
+maven-package:
+   stage: package
+   image: maven:3.8.1-jdk-17
+   script:
+      -cd sample-java-app
+      -mvn package
+
+
+
+# Maven Build
+## 🔹 Jenkins Pipeline — Maven Build
+You will learn how to **compile, test, and package a Java project** using Maven.
+
+pipeline {
+    agent any
+    tools {
+        maven 'Maven-3.8.1'
+        jdk 'JDK-17'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/Pathnex/sample-java-app.git'
+            }
+        }
+        stage('Compile') {
+            steps {
+                sh 'mvn clean compile'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+        stage('Package') {
+            steps {
+                sh 'mvn package'
+            }
+        }
+    }
+}
+
+
+
